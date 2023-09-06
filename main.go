@@ -26,9 +26,9 @@ func main() {
 func createTables(db *sql.DB) {
 	createDramaTableSQL := `CREATE TABLE IF NOT EXISTS drama (
 		"id" integer NOT NULL PRIMARY KEY AUTOINCREMENT,		
-		"drama" BOOLEAN,
+		"drama" BOOLEAN NOT NULL,
 		"description" TEXT,
-		"date" 
+		"date" TEXT NOT NULL
 		"url" TEXT		
 	  );`
 	log.Println("Creating drama table...")
