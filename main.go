@@ -7,6 +7,9 @@ import (
 	"os"
 	"time"
 
+	"github.com/joho/godotenv"
+
+	_ "github.com/joho/godotenv/autoload"
 	_ "github.com/libsql/libsql-client-go/libsql"
 	_ "modernc.org/sqlite"
 )
@@ -19,7 +22,11 @@ func check(e error) {
 }
 
 func main() {
-	var dbUrl = "libsql://dayssincerustdrama-defenestrator.turso.io?auth_token=eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpYXQiOiIyMDIzLTEwLTAxVDEzOjI4OjQ2LjQ2NTY0NzEwMloiLCJpZCI6IjUyZDRkMjgwLTRiZmQtMTFlZS04MGQ1LTEyYjVmNzliZDQ1MyJ9.guwCNf6hYRj9bQVlR45Iptrs-BPner__mJ8z0BBOe-RyBzLXJm0ioVnL6oC9QAb2OsYuyg2Sc9-GUygJ-U5ABg"
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+	var dbUrl = "libsql://dayssincerustdrama-defenestrator.turso.io?auth_token=" + os.Getenv("TURSO_API_TOKEN")
 	db, error := sql.Open("libsql", dbUrl)
 	if error != nil {
 		fmt.Fprintf(os.Stderr, "failed to open db %s: %s", dbUrl, error)
@@ -38,47 +45,47 @@ func main() {
 
 func createDramaTable(db *sql.DB) {
 
-	db.Exec("DROP TABLE drama;")
+	// db.Exec("DROP TABLE drama;")
 
-	createTable := `CREATE TABLE IF NOT EXISTS drama (
-		"id" 			INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-		"description" 	TEXT,
-		"url" 			TEXT,
-		"date" 			TEXT NOT NULL		
-	  );`
-	log.Println("Creating drama table...")
-	dramaReportsTable, err := db.Prepare(createTable)
-	check(err)
-	dramaReportsTable.Exec()
-	log.Println("drama reports table created")
+	// createTable := `CREATE TABLE IF NOT EXISTS drama (
+	// 	"id" 			INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+	// 	"description" 	TEXT,
+	// 	"url" 			TEXT,
+	// 	"date" 			TEXT NOT NULL
+	//   );`
+	// log.Println("Creating drama table...")
+	// dramaReportsTable, err := db.Prepare(createTable)
+	// check(err)
+	// dramaReportsTable.Exec()
+	// log.Println("drama reports table created")
 }
 
 func createDaysTable(db *sql.DB) {
-	log.Println("Creating days table...")
-	createTable := `CREATE TABLE IF NOT EXISTS days (
-		"id" integer NOT NULL PRIMARY KEY AUTOINCREMENT,		
-		"days" BIGINT UNSIGNED NOT NULL	
-	  );`
-	daysSinceDrama, err := db.Prepare(createTable)
-	check(err)
-	daysSinceDrama.Exec()
-	log.Println("days table created")
+	// log.Println("Creating days table...")
+	// createTable := `CREATE TABLE IF NOT EXISTS days (
+	// 	"id" integer NOT NULL PRIMARY KEY AUTOINCREMENT,
+	// 	"days" BIGINT UNSIGNED NOT NULL
+	//   );`
+	// daysSinceDrama, err := db.Prepare(createTable)
+	// check(err)
+	// daysSinceDrama.Exec()
+	// log.Println("days table created")
 }
 
 func initializeDays(db *sql.DB) {
-	zero := `INSERT INTO days ("days") VALUES (0);`
-	initialization, err := db.Prepare(zero)
-	check(err)
-	initialization.Exec()
-	log.Println("days table initialized")
+	// zero := `INSERT INTO days ("days") VALUES (0);`
+	// initialization, err := db.Prepare(zero)
+	// check(err)
+	// initialization.Exec()
+	// log.Println("days table initialized")
 }
 
 func initializeDrama(db *sql.DB) {
-	zero := `INSERT INTO drama ('drama', 'description', 'date', 'url') VALUES (TRUE, 'Some kind of bigotry accusations over nothing, probably, real dumb stuff', '2023-10-01', 'https://dayssincerustdrama.com');`
-	initialization, err := db.Prepare(zero)
-	check(err)
-	initialization.Exec()
-	log.Println("drama table initialized")
+	// zero := `INSERT INTO drama ('drama', 'description', 'date', 'url') VALUES (TRUE, 'Some kind of bigotry accusations over nothing, probably, real dumb stuff', '2023-10-01', 'https://dayssincerustdrama.com');`
+	// initialization, err := db.Prepare(zero)
+	// check(err)
+	// initialization.Exec()
+	// log.Println("drama table initialized")
 }
 
 func getDaysCount(db *sql.DB) {
