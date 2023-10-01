@@ -17,7 +17,6 @@ import (
 func check(e error) {
 	if e != nil {
 		log.Fatal(e.Error())
-		panic(e)
 	}
 }
 
