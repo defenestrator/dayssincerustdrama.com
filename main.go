@@ -27,21 +27,23 @@ func check(e error) {
 
 func main() {
 	err := godotenv.Load()
+
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
 
 	var dbUrl = "libsql://dayssincerustdrama-defenestrator.turso.io?auth_token=" + os.Getenv("TURSO_API_TOKEN")
+
 	db, error := sql.Open("libsql", dbUrl)
+
 	if error != nil {
-		fmt.Fprintf(os.Stderr, "failed to open db %s: %s", dbUrl, error)
+		fmt.Fprintf(os.Stderr, "failed to open db %s: %s \n", dbUrl, error)
 		os.Exit(1)
 	} else {
-		reportDrama(db)
 		updateCount(db)
 		count := strconv.Itoa(getDaysCount(db))
 		buildPage(count)
-		fmt.Println("Updates complete")
+		fmt.Printf("Daily update completed, days since drama is currently %s \n", count)
 		defer db.Close()
 	}
 }
@@ -56,14 +58,8 @@ func buildPage(count string) (html string) {
 	err := tpl.ExecuteTemplate(&processed, "base.html", vars)
 
 	if err != nil {
-		fmt.Printf("Error during template execution: %s", err)
+		fmt.Printf("Error during template execution: %s \n", err)
 	}
-
-	outputPath := "./index.html"
-	f, _ := os.Create(outputPath)
-	w := bufio.NewWriter(f)
-	w.WriteString(string(processed.Bytes()))
-	w.Flush()
 
 	publicPath := "./public/index.html"
 	p, _ := os.Create(publicPath)
@@ -79,19 +75,25 @@ func getDaysCount(db *sql.DB) (count int) {
 	return
 }
 
-func getDramaCount(db *sql.DB) {
-	var count uint64
+func getDramaCount(db *sql.DB) (count int) {
 	err := db.QueryRow("SELECT COUNT(*) FROM 'drama';").Scan(&count)
 	check(err)
-	fmt.Println(count)
+	return
 }
 
 func updateCount(db *sql.DB) {
-	var date string
-	err := db.QueryRow("SELECT date from drama WHERE id = (SELECT MAX(id) FROM drama);").Scan(&date)
+	var drama string
+	err := db.QueryRow("SELECT date from drama WHERE id = (SELECT MAX(id) FROM drama);").Scan(&drama)
 	check(err)
-	if date < time.Now().Format(time.DateOnly) {
-		_, err := db.Exec("UPDATE 'days' SET days = days +1 WHERE id = (SELECT MAX(id) FROM days);")
+	now := time.Now()
+	latestDrama, err := time.Parse(time.RFC3339, drama)
+	check(err)
+	diff := now.Sub(latestDrama)
+
+	fmt.Printf("The difference between %s and today %s is %d days\n", now.String(), latestDrama.String(), int(diff.Hours()/24))
+	days := int(diff.Hours() / 24)
+	if int(diff.Hours()/24) > 0 {
+		_, err := db.Exec("UPDATE 'days' SET days = %s WHERE id = (SELECT MAX(id) FROM days);", days)
 		check(err)
 	} else {
 		_, err := db.Exec("UPDATE 'days' SET days = 0 WHERE id = (SELECT MAX(id) FROM days);")
@@ -100,52 +102,11 @@ func updateCount(db *sql.DB) {
 }
 
 func reportDrama(db *sql.DB) {
-	datestamp := time.Now().Format(time.DateOnly)
+	datestamp := time.Now().Format(time.RFC3339)
 	_, err := db.Exec(`INSERT INTO drama ('description', 'url', 'date') VALUES ('Some kind of accusations over nothing', 'https://dayssincerustdrama.com', ?);`, datestamp)
 	check(err)
+	updateCount(db)
+	count := strconv.Itoa(getDaysCount(db))
+	buildPage(count)
+	fmt.Printf("Drama reported, days set to 0 on %s", datestamp)
 }
-
-// func createDramaTable(db *sql.DB) {
-
-// 	db.Exec("DROP TABLE drama;")
-
-// 	createTable := `CREATE TABLE IF NOT EXISTS drama (
-// 		"id" 			INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-// 		"description" 	TEXT,
-// 		"url" 			TEXT,
-// 		"date" 			TEXT NOT NULL
-// 	  );`
-// 	log.Println("Creating drama table...")
-// 	dramaReportsTable, err := db.Prepare(createTable)
-// 	check(err)
-// 	dramaReportsTable.Exec()
-// 	log.Println("drama reports table created")
-// }
-
-// func createDaysTable(db *sql.DB) {
-// 	log.Println("Creating days table...")
-// 	createTable := `CREATE TABLE IF NOT EXISTS days (
-// 		"id" integer NOT NULL PRIMARY KEY AUTOINCREMENT,
-// 		"days" BIGINT UNSIGNED NOT NULL
-// 	  );`
-// 	daysSinceDrama, err := db.Prepare(createTable)
-// 	check(err)
-// 	daysSinceDrama.Exec()
-// 	log.Println("days table created")
-// }
-
-// func initializeDays(db *sql.DB) {
-// 	zero := `INSERT INTO days ("days") VALUES (0);`
-// 	initialization, err := db.Prepare(zero)
-// 	check(err)
-// 	initialization.Exec()
-// 	log.Println("days table initialized")
-// }
-
-// func initializeDrama(db *sql.DB) {
-// 	zero := `INSERT INTO drama ('drama', 'description', 'date', 'url') VALUES (TRUE, 'Some kind of bigotry accusations over nothing, probably, real dumb stuff', '2023-10-01', 'https://dayssincerustdrama.com');`
-// 	initialization, err := db.Prepare(zero)
-// 	check(err)
-// 	initialization.Exec()
-// 	log.Println("drama table initialized")
-// }
