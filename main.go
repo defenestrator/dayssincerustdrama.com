@@ -58,11 +58,18 @@ func buildPage(count string) (html string) {
 	if err != nil {
 		fmt.Printf("Error during template execution: %s", err)
 	}
+
 	outputPath := "./index.html"
 	f, _ := os.Create(outputPath)
 	w := bufio.NewWriter(f)
 	w.WriteString(string(processed.Bytes()))
 	w.Flush()
+
+	publicPath := "./public/index.html"
+	p, _ := os.Create(publicPath)
+	x := bufio.NewWriter(p)
+	x.WriteString(string(processed.Bytes()))
+	x.Flush()
 	return
 }
 
