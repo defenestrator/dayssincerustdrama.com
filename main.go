@@ -37,12 +37,15 @@ func main() {
 		fmt.Fprintf(os.Stderr, "failed to open db %s: %s", dbUrl, error)
 		os.Exit(1)
 	} else {
-		// updateCount(db)
+		reportDrama(db)
+		updateCount(db)
 		count := strconv.Itoa(getDaysCount(db))
 		buildPage(count)
+		fmt.Println("Updates complete")
 		defer db.Close()
 	}
 }
+
 func buildPage(count string) (html string) {
 	var processed bytes.Buffer
 
@@ -64,7 +67,7 @@ func buildPage(count string) (html string) {
 }
 
 func getDaysCount(db *sql.DB) (count int) {
-	err := db.QueryRow("SELECT days FROM days WHERE id =(SELECT MAX(id) FROM days);").Scan(&count)
+	err := db.QueryRow("SELECT days FROM days WHERE id = (SELECT MAX(id) FROM days);").Scan(&count)
 	check(err)
 	return
 }
@@ -77,13 +80,21 @@ func getDramaCount(db *sql.DB) {
 }
 
 func updateCount(db *sql.DB) {
-	_, err := db.Exec("UPDATE 'days' SET days = days +1 WHERE id = 1;")
+	var date string
+	err := db.QueryRow("SELECT date from drama WHERE id = (SELECT MAX(id) FROM drama);").Scan(&date)
 	check(err)
+	if date < time.Now().Format(time.DateOnly) {
+		_, err := db.Exec("UPDATE 'days' SET days = days +1 WHERE id = (SELECT MAX(id) FROM days);")
+		check(err)
+	} else {
+		_, err := db.Exec("UPDATE 'days' SET days = 0 WHERE id = (SELECT MAX(id) FROM days);")
+		check(err)
+	}
 }
 
-func reportDrama(db *sql.DB, post any) {
+func reportDrama(db *sql.DB) {
 	datestamp := time.Now().Format(time.DateOnly)
-	_, err := db.Exec(`INSERT INTO drama ('description', 'url', 'date') VALUES (TRUE, 'Some kind of bigotry accusations over nothing, probably, real dumb stuff', 'https://dayssincerustdrama.com', ?");`, datestamp)
+	_, err := db.Exec(`INSERT INTO drama ('description', 'url', 'date') VALUES ('Some kind of accusations over nothing', 'https://dayssincerustdrama.com', ?);`, datestamp)
 	check(err)
 }
 
