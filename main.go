@@ -43,7 +43,7 @@ func main() {
 		updateCount(db)
 		count := strconv.Itoa(getDaysCount(db))
 		buildPage(count)
-		fmt.Printf("Daily update completed, days since drama is currently %s \n", count)
+		fmt.Printf("Daily update completed\n%s day(s) since drama in the Rust community.\n", count)
 		defer db.Close()
 	}
 }
@@ -83,22 +83,30 @@ func getDramaCount(db *sql.DB) (count int) {
 
 func updateCount(db *sql.DB) {
 	var drama string
+
 	err := db.QueryRow("SELECT date from drama WHERE id = (SELECT MAX(id) FROM drama);").Scan(&drama)
+
 	check(err)
+
 	now := time.Now()
+
 	latestDrama, err := time.Parse(time.RFC3339, drama)
+
 	check(err)
 
 	days := strconv.Itoa(int(now.Sub(latestDrama).Hours() / 24))
 
-	fmt.Printf("The difference between %s and today %s is %s days\n", now.String(), latestDrama.String(), days)
+	fmt.Printf("Days since drama %s\n", days)
+
+	updateQuery := fmt.Sprintf("UPDATE 'days' SET days = %s WHERE id = (SELECT MAX(id) FROM days);", days)
 
 	if int(now.Sub(latestDrama).Hours()/24) > 0 {
-		_, err := db.Exec("UPDATE 'days' SET days = %s WHERE id = (SELECT MAX(id) FROM days);", days)
+		_, err := db.Exec(updateQuery)
 		check(err)
 	} else {
-		_, err := db.Exec("UPDATE 'days' SET days = 0 WHERE id = (SELECT MAX(id) FROM days);")
+		_, err := db.Exec(updateQuery)
 		check(err)
+		fmt.Printf("The count should be 0, unless our math is fucked up. Actual results: %s\n", days)
 	}
 }
 
