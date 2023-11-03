@@ -88,12 +88,13 @@ func updateCount(db *sql.DB) {
 	now := time.Now()
 	latestDrama, err := time.Parse(time.RFC3339, drama)
 	check(err)
-	diff := now.Sub(latestDrama)
 
-	fmt.Printf("The difference between %s and today %s is %d days\n", now.String(), latestDrama.String(), int(diff.Hours()/24))
-	days := strconv.Itoa(int(diff.Hours() / 24))
-	if int(diff.Hours()/24) > 0 {
-		_, err := db.Exec("UPDATE 'days' SET days = " + days + " WHERE id = (SELECT MAX(id) FROM days);")
+	days := strconv.Itoa(int(now.Sub(latestDrama).Hours() / 24))
+
+	fmt.Printf("The difference between %s and today %s is %s days\n", now.String(), latestDrama.String(), days)
+
+	if int(now.Sub(latestDrama).Hours()/24) > 0 {
+		_, err := db.Exec("UPDATE 'days' SET days = %s WHERE id = (SELECT MAX(id) FROM days);", days)
 		check(err)
 	} else {
 		_, err := db.Exec("UPDATE 'days' SET days = 0 WHERE id = (SELECT MAX(id) FROM days);")
