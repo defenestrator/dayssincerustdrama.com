@@ -72,7 +72,8 @@ func buildPage(count string) (html string) {
 func getDaysCount(db *sql.DB) (count int) {
 	err := db.QueryRow("SELECT days FROM days WHERE id = (SELECT MAX(id) FROM days);").Scan(&count)
 	check(err)
-	return
+	fmt.Println(count)
+	return count
 }
 
 func getDramaCount(db *sql.DB) (count int) {
