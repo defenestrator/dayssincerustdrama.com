@@ -40,6 +40,8 @@ func main() {
 		fmt.Fprintf(os.Stderr, "failed to open db %s: %s \n", dbUrl, error)
 		os.Exit(1)
 	} else {
+
+		reportDrama(db)
 		updateCount(db)
 		count := strconv.Itoa(getDaysCount(db))
 		buildPage(count)
